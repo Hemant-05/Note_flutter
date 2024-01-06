@@ -1,17 +1,69 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:note/Database/DatabaseHelper.dart';
+import 'package:note/Resources/Colors.dart';
 import 'package:note/Resources/NoteModel.dart';
+import 'package:note/Screens/HomeScreen.dart';
 
-showNewCusDialog(BuildContext context) {
+Widget CusAppBar(BuildContext context, double wi,double hi, String title,String time,Widget widget,bool isSearch) {
+  return Container(
+    width: wi,
+    height: hi,
+    alignment: Alignment.bottomCenter,
+    decoration: BoxDecoration(
+      color: AppBarColor,
+      borderRadius: const BorderRadius.only(
+        bottomLeft: Radius.circular(40),
+        bottomRight: Radius.circular(40),
+      ),
+    ),
+    child: Container(
+      constraints: BoxConstraints(maxWidth: wi * .85),
+      padding: const EdgeInsets.symmetric(vertical: 18),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Visibility(
+                visible: !isSearch,
+                child: CusText(
+                  title,
+                  40,
+                  true
+                ),
+              ),
+              Visibility(
+                visible: !(title == 'Notes'),
+                child: CusText(
+                  'Last Updated $time',
+                  16,
+                  true
+                ),
+              ),
+            ],
+          ),
+          widget,
+        ],
+      ),
+    ),
+  );
+}
+
+showCusAddNoteDialog(BuildContext context) {
   TextEditingController titleCon = TextEditingController();
   TextEditingController contentCon = TextEditingController();
   showDialog(
     context: context,
     builder: (context) {
       return Dialog(
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
+        child: Container(
+          constraints: BoxConstraints(maxHeight: 260),
+          padding: const EdgeInsets.all(12),
           child: Column(
             children: [
               cusTextField('Enter Title', titleCon),
@@ -20,8 +72,9 @@ showNewCusDialog(BuildContext context) {
               hGap(12),
               ElevatedButton(
                   onPressed: () async {
-                    var time = DateTime.timestamp();
-                    var date = DateTime.now();
+                    DateTime now = DateTime.now();
+                    String time = DateFormat.jm().format(now);
+                    String date = DateFormat('dd-MM-yyyy').format(now);
                     var title = titleCon.text.toString();
                     var content = contentCon.text.toString();
                     if (!title.isEmpty) {
@@ -47,33 +100,40 @@ showNewCusDialog(BuildContext context) {
   );
 }
 
-showCusDeleteDialog(BuildContext context, int? id) {
+showCusDeleteDialog(BuildContext context, int? id,bool inDetail) {
   showDialog(
     context: context,
     builder: (context) {
       return AlertDialog(
-        icon: Icon(Icons.delete_forever_outlined),
+        icon: Icon(Icons.delete_forever_outlined,size: 40,color: Colors.red,),
         title: Text('Delete'),
+        actionsAlignment: MainAxisAlignment.spaceEvenly,
         actions: [
           ElevatedButton(
               onPressed: () {
                 showCusSnackBar(context, 'Note Deleted !');
-                Navigator.pop(context);
+                    Navigator.pop(context);
               },
-              child: Icon(Icons.add)),
+              child: Transform.rotate(
+                angle: 40,
+                  child: Icon(Icons.add,size: 30,),),),
           ElevatedButton(
               onPressed: () async {
                 int c = await DatabaseHelper().deleteNote(id!);
-                if(c != 0){
+                if (c != 0) {
                   showCusSnackBar(context, 'Deleted Successfully....');
-                }else{
-                  showCusSnackBar(context,'Some Error !!');
+                } else {
+                  showCusSnackBar(context, 'Some Error !!');
                 }
-                Navigator.pop(context);
+                if(!inDetail)
+                  Navigator.pop(context);
+                else
+                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => HomeScreen(),), (route) => false);
               },
               child: Icon(
                 Icons.done,
-              )),
+                size: 30,
+              ),),
         ],
       );
     },
@@ -117,4 +177,10 @@ showCusSnackBar(BuildContext context, String text) {
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
     content: Text('$text'),
   ));
+}
+
+Widget CusText(String text,double size,bool isBold){
+  return Text('$text',
+      style: TextStyle(overflow: TextOverflow.ellipsis,color: textColor,fontWeight: isBold? FontWeight.bold: FontWeight.w300,fontSize: size),
+  );
 }
