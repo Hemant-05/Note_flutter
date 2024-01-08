@@ -4,12 +4,14 @@ class Note{
    String content;
    String date;
    String time;
+   // int imp;
   Note(
    {this.id,
     required this.title,
     required this.content,
     required this.date,
-    required this.time
+    required this.time,
+     // required this.imp,
 });
   factory Note.fromJson(Map<String,dynamic> json){
     return Note(
@@ -17,7 +19,9 @@ class Note{
       title : json['title'],
       content : json['content'],
       date : json['date'],
-      time : json['time'],);
+      time : json['time'],
+      // imp: json['imp']?? 0,
+    );
   }
   Map<String,dynamic> toJson(){
     var data = <String,dynamic>{};
@@ -26,6 +30,7 @@ class Note{
     data['content'] = content;
     data['date'] = date;
     data['time'] = time;
+    // data['imp'] = imp;
     return data;
   }
 }

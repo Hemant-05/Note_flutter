@@ -72,7 +72,9 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
               title: old.title,
               content: content,
               date: date,
-              time: time);
+              time: time,
+              // imp: 1
+          );
           int c = await DatabaseHelper().updateNote(note);
           Navigator.pop(context);
           if (c != 0) {

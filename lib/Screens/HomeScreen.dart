@@ -17,46 +17,79 @@ class _HomeScreenState extends State<HomeScreen> {
   final dbHelper = DatabaseHelper();
   List<Note> list = [];
   List<Note> searchList = [];
+  FocusNode focusNode = FocusNode();
   TextEditingController searchCon = TextEditingController();
 
   Future onRefreshFun() async {
     setState(() {});
   }
 
-  void onSearchFun(String search) async{
+  @override
+  void dispose() {
+    super.dispose();
+    searchCon.dispose();
+    focusNode.dispose();
+  }
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    getList();
+  }
+  void getList() async{
+    list = await dbHelper.getNotes();
+    print('Total notes are : ${list.length}');
+    print(list);
+  }
+  void updateImp()async{
+    Note note;
+
+  }
+
+  void onSearchFun(String search) async {
     list.clear();
     list = await dbHelper.getNotes();
+    print('Total notes are : ${list.length}');
+    print(list);
     setState(() {
       list.forEach((note) {
-        if(note.content.toLowerCase().contains(search.toLowerCase(),) ||
-            note.title.toLowerCase().contains(search.toLowerCase(),)){
+        if (note.content.toLowerCase().contains(
+                  search.toLowerCase(),
+                ) ||
+            note.title.toLowerCase().contains(
+                  search.toLowerCase(),
+                )) {
           searchList.add(note);
         }
       });
     });
   }
-  Future<List<Note>> getSearchList() async{
+
+  Future<List<Note>> getSearchList() async {
     print('Search list length is : ${searchList.length}');
     return searchList;
   }
+
   Widget search(Size size) {
     return SearchBar(
       controller: searchCon,
       leading: Icon(Icons.search_rounded),
       hintText: 'Search your note',
+      focusNode: focusNode,
       trailing: [
         Visibility(
-            visible: isSearch,
-            child: IconButton(
-              onPressed: () {
-                setState(() {
-                  isSearch = false;
-                });
+          visible: isSearch,
+          child: IconButton(
+            onPressed: () {
+              setState(() {
+                isSearch = false;
                 searchCon.clear();
                 searchList.clear();
-              },
-              icon: Icon(Icons.highlight_remove_rounded),
-            ),
+                focusNode.unfocus();
+              });
+            },
+            icon: Icon(Icons.highlight_remove_rounded),
+          ),
         ),
       ],
       onChanged: (query) => onSearchFun(query),
@@ -66,8 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       },
       constraints: BoxConstraints(
-          maxWidth: isSearch ? size.width * .85 : 40,
-          minHeight: 40),
+          maxWidth: isSearch ? size.width * .85 : 40, minHeight: 40),
     );
   }
 
@@ -99,16 +131,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget ListBuilder(BuildContext context) {
+    String st = isSearch? 'Search Notes here ' : 'No Notes here';
     return FutureBuilder(
-      future: isSearch? getSearchList() : dbHelper.getNotes(),
+      future: isSearch ? getSearchList() : dbHelper.getNotes(),
       builder: (context, snapshot) {
         if (snapshot.data != null) {
           list = snapshot.data!;
           return list.length == 0
               ? Center(
-                  child: CusText('No Notes here', 40, true),
+                  child: CusText('$st', 40, true),
                 )
               : ListView.builder(
+                  physics: BouncingScrollPhysics(),
                   itemCount: list.length,
                   itemBuilder: (context, index) {
                     return Container(
@@ -118,15 +152,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                       child: ListTile(
-                        onLongPress: () {
-                          showCusDeleteDialog(context, list[index].id, false);
-                        },
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  NoteDetailsScreen(note: list![index]),
+                                  NoteDetailsScreen(note: list[index]),
                             ),
                           );
                         },
@@ -141,10 +172,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         trailing: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            RotatedBox(
-                              quarterTurns: 0,
-                              child: CusText('${list[index].date}', 13, false),
-                            ),
+                            /*CircleAvatar(
+                              maxRadius: 6,
+                              backgroundColor: list[index].imp == 1 ? Colors.red : Colors.grey,
+                            ),*/
+                            hGap(6),
+                            CusText('${list[index].date}', 13, false),
                             CusText('${list[index].time}', 12, false),
                           ],
                         ),
