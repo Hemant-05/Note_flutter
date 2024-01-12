@@ -7,7 +7,7 @@ import 'package:sqflite/sqlite_api.dart';
 
 class DatabaseHelper {
   static final _dbName = 'note_db';
-  static final _dbVersion = 2;
+  static final _dbVersion = 3;
   static Database? _database;
 
   // final DatabaseHelper helper = DatabaseHelper();
@@ -24,20 +24,19 @@ class DatabaseHelper {
         _dbName); // join function is not recognized directly first we import path package and than use it.
     return await openDatabase(
         path,
-        // onUpgrade: (db, ov, nv) => upgradeDB(db,ov,nv),
+        onUpgrade: (db, ov, nv) => upgradeDB(db,ov,nv),
         onCreate: (Database db, int version) async {
           await db.execute(
-              '''create table notes(id integer primary key autoincrement,title text,content text,date text, time text)''');
+              '''create table notes(id integer primary key autoincrement,title text,content text,date text, time text,imp integer )''');
         },
         version: _dbVersion
     );
   }
-  /*Future<void> upgradeDB(Database db,int ov,int nv) async {
+  Future<void> upgradeDB(Database db,int ov,int nv) async {
     if (ov < nv) {
-      return await db.execute('alter table notes add column imp integer');
+      return await db.execute('alter table notes add column imp integer default 0');
     }
   }
-*/
   // for inserting a note
   Future<int> insertNote(Note note) async {
     Database db = await database;

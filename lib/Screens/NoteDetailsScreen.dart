@@ -16,12 +16,24 @@ class NoteDetailsScreen extends StatefulWidget {
 
 class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
   TextEditingController contentCon = TextEditingController();
+  int imp = 0;
+  List<Color> colorList = [
+    Colors.black,
+    Colors.lightGreen,
+    Colors.grey,
+    Colors.lightBlueAccent,
+    Colors.blue,
+    Colors.pink,
+    Colors.purple,
+    Colors.red,
+    Colors.white24,
+  ];
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     contentCon.text = widget.note.content;
+    imp = widget.note.imp;
   }
 
   Widget delete() {
@@ -41,11 +53,11 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
     return Scaffold(
-      backgroundColor: Colors.grey,
+      backgroundColor: imp == 1 ? Colors.red : Colors.grey,
       body: Column(
         children: [
           CusAppBar(context, size.width, size.height * 0.18,
-              '${widget.note.title}', '${widget.note.time}', delete(),false),
+              '${widget.note.title}', '${widget.note.time}', delete(), false),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(15),
@@ -68,12 +80,12 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
           String time = DateFormat.jm().format(now);
           String date = DateFormat('dd-MM-yyyy').format(now);
           Note note = Note(
-              id: old.id,
-              title: old.title,
-              content: content,
-              date: date,
-              time: time,
-              // imp: 1
+            id: old.id,
+            title: old.title,
+            content: '$content',
+            date: date,
+            time: time,
+            imp: imp,
           );
           int c = await DatabaseHelper().updateNote(note);
           Navigator.pop(context);

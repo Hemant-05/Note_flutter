@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:note/Custom/custom_item.dart';
 import 'package:note/Database/DatabaseHelper.dart';
 import 'package:note/Resources/Colors.dart';
@@ -19,6 +20,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Note> searchList = [];
   FocusNode focusNode = FocusNode();
   TextEditingController searchCon = TextEditingController();
+  int imp = 1;
+  bool check = false;
 
   Future onRefreshFun() async {
     setState(() {});
@@ -30,27 +33,10 @@ class _HomeScreenState extends State<HomeScreen> {
     searchCon.dispose();
     focusNode.dispose();
   }
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    getList();
-  }
-  void getList() async{
-    list = await dbHelper.getNotes();
-    print('Total notes are : ${list.length}');
-    print(list);
-  }
-  void updateImp()async{
-    Note note;
-
-  }
 
   void onSearchFun(String search) async {
     list.clear();
     list = await dbHelper.getNotes();
-    print('Total notes are : ${list.length}');
-    print(list);
     setState(() {
       list.forEach((note) {
         if (note.content.toLowerCase().contains(
@@ -66,7 +52,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<List<Note>> getSearchList() async {
-    print('Search list length is : ${searchList.length}');
     return searchList;
   }
 
@@ -127,19 +112,35 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Icon(Icons.add),
         tooltip: 'Add new task',
       ),
+      drawer: Drawer(
+        width: 250,
+        backgroundColor: Colors.grey,
+        child: ListView(
+          children: [
+            DrawerHeader(
+              child: Container(
+                color: Colors.green,
+              ),
+            ),
+            ListTile(title: Text('tile : 1'),),
+            ListTile(title: Text('tile : 2'),),
+          ],
+        ),
+      ),
     );
   }
 
   Widget ListBuilder(BuildContext context) {
-    String st = isSearch? 'Search Notes here ' : 'No Notes here';
+    String st = isSearch ? 'Search Notes here ' : 'No Notes here';
     return FutureBuilder(
       future: isSearch ? getSearchList() : dbHelper.getNotes(),
       builder: (context, snapshot) {
         if (snapshot.data != null) {
           list = snapshot.data!;
+          list.sort((a, b) => b.id!.compareTo(a.id!));
           return list.length == 0
               ? Center(
-                  child: CusText('$st', 40, true),
+                  child: cusText('$st', 40, true),
                 )
               : ListView.builder(
                   physics: BouncingScrollPhysics(),
@@ -161,8 +162,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           );
                         },
-                        leading: CusText('${index + 1}', 16, true),
-                        title: CusText('${list[index].title}', 18, true),
+                        leading: cusText('${index + 1}', 16, true),
+                        title: cusText('${list[index].title}', 18, true),
                         subtitle: Text(
                           '${list[index].content}',
                           maxLines: 3,
@@ -172,13 +173,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         trailing: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            /*CircleAvatar(
-                              maxRadius: 6,
+                            CircleAvatar(
+                              maxRadius: 5,
                               backgroundColor: list[index].imp == 1 ? Colors.red : Colors.grey,
-                            ),*/
+                            ),
                             hGap(6),
-                            CusText('${list[index].date}', 13, false),
-                            CusText('${list[index].time}', 12, false),
+                            cusText('${list[index].date}', 13, false),
+                            cusText('${list[index].time}', 12, false),
                           ],
                         ),
                       ),
@@ -190,6 +191,79 @@ class _HomeScreenState extends State<HomeScreen> {
             child: CircularProgressIndicator(),
           );
         }
+      },
+    );
+  }
+
+  showCusAddNoteDialog(BuildContext context) {
+    TextEditingController titleCon = TextEditingController();
+    TextEditingController contentCon = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+            builder: (context, setState) => Dialog(
+                  child: Container(
+                    constraints: BoxConstraints(maxHeight: 300),
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      children: [
+                        Container(
+                          constraints: BoxConstraints(maxHeight: 70),
+                          child: cusTextField('Enter Title', titleCon, 1),
+                        ),
+                        hGap(12),
+                        Expanded(
+                          child: cusTextField(
+                              'Write your note here....', contentCon, null),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            Text('Important ? ',style: TextStyle(fontSize: 20,),),
+                            Switch(
+                              value: check,
+                              onChanged: (value) {
+                                setState(() {
+                                  imp = value? 1 : 0;
+                                  check = value;
+                                });
+                              },
+                            )
+                          ],
+                        ),
+                        hGap(18),
+                        ElevatedButton(
+                          onPressed: () async {
+                            DateTime now = DateTime.now();
+                            String time = DateFormat.jm().format(now);
+                            String date = DateFormat('dd-MM-yyyy').format(now);
+                            var title = titleCon.text.toString();
+                            var content = contentCon.text.toString();
+                            if (!title.isEmpty) {
+                              Note note = Note(
+                                title: '$title',
+                                content: '$content',
+                                date: '$date',
+                                time: '$time',
+                                imp: imp,
+                              );
+                              await DatabaseHelper().insertNote(note);
+                              check = false;
+                              imp = 0;
+                              Navigator.pop(context);
+                            } else {
+                              showCusSnackBar(context, 'Write something');
+                              Navigator.pop(context);
+                            }
+                          },
+                          child: Text('Save'),
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+        );
       },
     );
   }

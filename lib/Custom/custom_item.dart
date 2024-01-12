@@ -1,9 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:note/Database/DatabaseHelper.dart';
 import 'package:note/Resources/Colors.dart';
-import 'package:note/Resources/NoteModel.dart';
 import 'package:note/Screens/HomeScreen.dart';
 
 Widget CusAppBar(BuildContext context, double wi, double hi, String title,
@@ -36,13 +34,13 @@ Widget CusAppBar(BuildContext context, double wi, double hi, String title,
                   constraints: BoxConstraints(maxWidth: wi * .7),
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    child: CusText(title, 40, true),
+                    child: cusText(title, 40, true),
                   ),
                 ),
               ),
               Visibility(
                 visible: !(title == 'Notes'),
-                child: CusText('Last Updated $time', 16, true),
+                child: cusText('Last Updated $time', 16, true),
               ),
             ],
           ),
@@ -53,70 +51,12 @@ Widget CusAppBar(BuildContext context, double wi, double hi, String title,
   );
 }
 
-Widget isImportant(BuildContext context, double wi, double, hi) {
-  return Container();
-}
-
-showCusAddNoteDialog(BuildContext context) {
-  TextEditingController titleCon = TextEditingController();
-  TextEditingController contentCon = TextEditingController();
-  int imp = 0;
-  bool check = false;
-  showDialog(
-    context: context,
-    builder: (context) {
-      return Dialog(
-        child: Container(
-          constraints: BoxConstraints(maxHeight: 300),
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            children: [
-              Container(
-                  constraints: BoxConstraints(maxHeight: 70),
-                  child: cusTextField('Enter Title', titleCon, 1)),
-              hGap(12),
-              Expanded(
-                  child: cusTextField(
-                      'Write your note here....', contentCon, null),
-              ),
-              hGap(12),
-              ElevatedButton(
-                  onPressed: () async {
-                    DateTime now = DateTime.now();
-                    String time = DateFormat.jm().format(now);
-                    String date = DateFormat('dd-MM-yyyy').format(now);
-                    var title = titleCon.text.toString();
-                    var content = contentCon.text.toString();
-                    if (!title.isEmpty) {
-                      Note note = Note(
-                        title: '$title',
-                        content: '$content',
-                        date: '$date',
-                        time: '$time',
-                        // imp: imp,
-                      );
-                      await DatabaseHelper().insertNote(note);
-                      Navigator.pop(context);
-                    } else {
-                      showCusSnackBar(context, 'Write something');
-                      Navigator.pop(context);
-                    }
-                  },
-                  child: Text('Save'))
-            ],
-          ),
-        ),
-      );
-    },
-  );
-}
-
 showCusDeleteDialog(BuildContext context, int? id, bool inDetail) {
   showDialog(
     context: context,
     builder: (context) {
       return AlertDialog(
-        icon: Icon(
+        icon: const Icon(
           Icons.delete_forever_outlined,
           size: 40,
           color: Colors.red,
@@ -131,7 +71,7 @@ showCusDeleteDialog(BuildContext context, int? id, bool inDetail) {
             },
             child: Transform.rotate(
               angle: 40,
-              child: Icon(
+              child: const Icon(
                 Icons.add,
                 size: 30,
               ),
@@ -145,15 +85,16 @@ showCusDeleteDialog(BuildContext context, int? id, bool inDetail) {
               } else {
                 showCusSnackBar(context, 'Some Error !!');
               }
-              if (!inDetail)
+              if (!inDetail) {
                 Navigator.pop(context);
-              else
+              } else {
                 Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(
                       builder: (context) => HomeScreen(),
                     ),
                     (route) => false);
+              }
             },
             child: Icon(
               Icons.done,
@@ -213,7 +154,7 @@ showCusSnackBar(BuildContext context, String text) {
   ));
 }
 
-Widget CusText(String text, double size, bool isBold) {
+Widget cusText(String text, double size, bool isBold) {
   return Text(
     '$text',
     style: TextStyle(
