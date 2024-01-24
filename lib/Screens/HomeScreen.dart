@@ -1,10 +1,15 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:note/Custom/custom_item.dart';
 import 'package:note/Database/DatabaseHelper.dart';
-import 'package:note/Resources/Colors.dart';
+import 'package:note/Provider/NoteProvider.dart';
 import 'package:note/Resources/NoteModel.dart';
+import 'package:note/Resources/Utils.dart';
 import 'package:note/Screens/NoteDetailsScreen.dart';
+import 'package:note/Screens/SettingsScreen.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,12 +25,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Note> searchList = [];
   FocusNode focusNode = FocusNode();
   TextEditingController searchCon = TextEditingController();
-  int imp = 1;
-  bool check = false;
-
-  Future onRefreshFun() async {
-    setState(() {});
-  }
+  int imp = 0;
+  int selectedIndex = 0;
 
   @override
   void dispose() {
@@ -36,30 +37,49 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void onSearchFun(String search) async {
     list.clear();
+    searchList.clear();
     list = await dbHelper.getNotes();
     setState(() {
-      list.forEach((note) {
+      for (var note in list) {
         if (note.content.toLowerCase().contains(
                   search.toLowerCase(),
                 ) ||
             note.title.toLowerCase().contains(
                   search.toLowerCase(),
                 )) {
+          print('Note item details : ${note.content}');
           searchList.add(note);
         }
-      });
+      }
     });
   }
 
-  Future<List<Note>> getSearchList() async {
-    return searchList;
+  void addNote(String title, String content, NoteProvider value) async {
+    DateTime now = DateTime.now();
+    String time = DateFormat.jm().format(now);
+    String date = DateFormat('dd-MM-yyyy').format(now);
+    if (!title.isEmpty) {
+      Note note = Note(
+        title: '$title',
+        content: '$content',
+        date: '$date',
+        time: '$time',
+        imp: imp,
+      );
+      await value.insertNote(note);
+      imp = 0;
+      Navigator.pop(context);
+    } else {
+      showCusSnackBar(context, 'Write something');
+      Navigator.pop(context);
+    }
   }
 
   Widget search(Size size) {
     return SearchBar(
       controller: searchCon,
       leading: Icon(Icons.search_rounded),
-      hintText: 'Search your note',
+      hintText: 'Search your note here',
       focusNode: focusNode,
       trailing: [
         Visibility(
@@ -84,185 +104,209 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       },
       constraints: BoxConstraints(
-          maxWidth: isSearch ? size.width * .85 : 40, minHeight: 40),
+        maxWidth: isSearch? size.width * .8 : 40,
+        minHeight: 40,
+        maxHeight: 40,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    return Scaffold(
-      backgroundColor: bgColor,
-      body: Column(
-        children: [
-          CusAppBar(context, size.width, size.height * 0.2, 'Notes', '',
-              search(size), isSearch),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: onRefreshFun,
-              child: ListBuilder(context),
+    return Consumer<NoteProvider>(
+      builder: (context, value, child) => Scaffold(
+        appBar: AppBar(
+          title: cusText('My Notes', 22, true),
+          actions: [
+            search(size),
+            const SizedBox(
+              width: 20,
             ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showCusAddNoteDialog(context);
-        },
-        child: Icon(Icons.add),
-        tooltip: 'Add new task',
-      ),
-      drawer: Drawer(
-        width: 250,
-        backgroundColor: Colors.grey,
-        child: ListView(
-          children: [
-            DrawerHeader(
-              child: Container(
-                color: Colors.green,
-              ),
-            ),
-            ListTile(title: Text('tile : 1'),),
-            ListTile(title: Text('tile : 2'),),
           ],
+        ),
+        // backgroundColor: bgColor,
+        body: ListViewBuilder(context, value),
+        floatingActionButton: FloatingActionButton(
+          backgroundColor: Colors.grey,
+          onPressed: () {
+            showCusAddNoteDialog(context, value);
+          },
+          child: Icon(Icons.add),
+          tooltip: 'Add new note',
+        ),
+        drawer: Drawer(
+          width: 250,
+          child: Column(
+            children: [
+              DrawerHeader(
+                child: Center(
+                  child: cusText(
+                    'My Notes',
+                    40,
+                    true,
+                  ),
+                ),
+              ),
+              ListTile(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => SettingsScreen(),
+                  ),
+                ),
+                title: cusText('Settings', 24, true),
+                trailing: const Icon(
+                  Icons.settings,
+                  size: 28,
+                ),
+              ),
+              ListTile(
+                onTap: () async {
+                  final Uri url = Uri.parse(git_url);
+                  if(!await launchUrl(url,mode: LaunchMode.externalApplication)){
+                    showCusSnackBar(context, 'Error while opening web');
+                  }
+                },
+                title: cusText('Source Code', 24, true),
+                trailing: const Icon(
+                  Icons.code
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget ListBuilder(BuildContext context) {
-    String st = isSearch ? 'Search Notes here ' : 'No Notes here';
-    return FutureBuilder(
-      future: isSearch ? getSearchList() : dbHelper.getNotes(),
-      builder: (context, snapshot) {
-        if (snapshot.data != null) {
-          list = snapshot.data!;
-          list.sort((a, b) => b.id!.compareTo(a.id!));
-          return list.length == 0
-              ? Center(
-                  child: cusText('$st', 40, true),
-                )
-              : ListView.builder(
-                  physics: BouncingScrollPhysics(),
-                  itemCount: list.length,
-                  itemBuilder: (context, index) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                      child: ListTile(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  NoteDetailsScreen(note: list[index]),
-                            ),
-                          );
-                        },
-                        leading: cusText('${index + 1}', 16, true),
-                        title: cusText('${list[index].title}', 18, true),
-                        subtitle: Text(
-                          '${list[index].content}',
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: textColor),
-                        ),
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircleAvatar(
-                              maxRadius: 5,
-                              backgroundColor: list[index].imp == 1 ? Colors.red : Colors.grey,
-                            ),
-                            hGap(6),
-                            cusText('${list[index].date}', 13, false),
-                            cusText('${list[index].time}', 12, false),
-                          ],
-                        ),
+  Widget ListViewBuilder(BuildContext context, NoteProvider value) {
+    return value.noteList.isEmpty
+        ? const Center(child: CircularProgressIndicator())
+        : ListView.builder(
+            itemCount: isSearch? searchList.length :value.noteList.length,
+            itemBuilder: (context, index) {
+              Note note = isSearch? searchList[index] : value.noteList[index];
+              return Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                child: ListTile(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => NoteDetailsScreen(note: note),
                       ),
                     );
                   },
-                );
-        } else {
-          return const Center(
-            child: CircularProgressIndicator(),
+                  onLongPress: (){
+                    showCusDeleteDialog(context, note, false, value);
+                  },
+                  title: cusText('${note.title}', 18, true),
+                  subtitle: Text(
+                    '${note.content}',
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Visibility(
+                        visible: note.imp == 1,
+                        child: const RotatedBox(
+                          quarterTurns: 3,
+                          child: Icon(
+                            Icons.label_important,
+                          ),
+                        ),
+                      ),
+                      cusText('${note.time}', 12, true),
+                    ],
+                  ),
+                ),
+              );
+            },
           );
-        }
-      },
-    );
   }
 
-  showCusAddNoteDialog(BuildContext context) {
+  showCusAddNoteDialog(BuildContext context, NoteProvider value) {
+    Size size = MediaQuery.of(context).size;
     TextEditingController titleCon = TextEditingController();
     TextEditingController contentCon = TextEditingController();
     showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
-            builder: (context, setState) => Dialog(
-                  child: Container(
-                    constraints: BoxConstraints(maxHeight: 300),
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
+          builder: (context, setState) => BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+            child: Dialog(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              child: Container(
+                constraints: const BoxConstraints(maxHeight: 300),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
+                child: Column(
+                  children: [
+                    Container(
+                      constraints: const BoxConstraints(maxHeight: 70),
+                      child:
+                          cusTextField('Enter Title', titleCon, 1, size, true),
+                    ),
+                    hGap(14),
+                    Expanded(
+                      child: cusTextField('Write your note here....',
+                          contentCon, null, size, true),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        Container(
-                          constraints: BoxConstraints(maxHeight: 70),
-                          child: cusTextField('Enter Title', titleCon, 1),
+                        const Text(
+                          'Important ? ',
+                          style: TextStyle(
+                            fontSize: 20,
+                          ),
                         ),
-                        hGap(12),
-                        Expanded(
-                          child: cusTextField(
-                              'Write your note here....', contentCon, null),
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            Text('Important ? ',style: TextStyle(fontSize: 20,),),
-                            Switch(
-                              value: check,
-                              onChanged: (value) {
-                                setState(() {
-                                  imp = value? 1 : 0;
-                                  check = value;
-                                });
-                              },
-                            )
-                          ],
-                        ),
-                        hGap(18),
-                        ElevatedButton(
-                          onPressed: () async {
-                            DateTime now = DateTime.now();
-                            String time = DateFormat.jm().format(now);
-                            String date = DateFormat('dd-MM-yyyy').format(now);
-                            var title = titleCon.text.toString();
-                            var content = contentCon.text.toString();
-                            if (!title.isEmpty) {
-                              Note note = Note(
-                                title: '$title',
-                                content: '$content',
-                                date: '$date',
-                                time: '$time',
-                                imp: imp,
-                              );
-                              await DatabaseHelper().insertNote(note);
-                              check = false;
-                              imp = 0;
-                              Navigator.pop(context);
-                            } else {
-                              showCusSnackBar(context, 'Write something');
-                              Navigator.pop(context);
-                            }
+                        Switch(
+                          trackColor: MaterialStatePropertyAll(imp == 1
+                              ? Colors.red
+                              : MediaQuery.of(context).platformBrightness ==
+                              Brightness.dark
+                              ? Colors.black
+                              : Colors.white),
+                          trackOutlineWidth: MaterialStatePropertyAll(2),
+                          value: imp == 1,
+                          onChanged: (value) {
+                            setState(() {
+                              imp = value ? 1 : 0;
+                            });
                           },
-                          child: Text('Save'),
                         )
                       ],
                     ),
-                  ),
+                    ElevatedButton(
+                      onPressed: () {
+                        var title = titleCon.text.toString();
+                        var content = contentCon.text.toString();
+                        addNote(title, content, value);
+                      },
+                      child: Text(
+                        'Save',
+                        style: TextStyle(
+                            color: MediaQuery.of(context).platformBrightness ==
+                                    Brightness.dark
+                                ? Colors.white
+                                : Colors.black,
+                        ),
+                      ),
+                    )
+                  ],
                 ),
+              ),
+            ),
+          ),
         );
       },
     );

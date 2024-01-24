@@ -1,0 +1,1 @@
+final String git_url = 'https://github.com/Hemant-05/Note_flutter.git';

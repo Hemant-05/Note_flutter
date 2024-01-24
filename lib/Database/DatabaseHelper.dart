@@ -7,11 +7,10 @@ import 'package:sqflite/sqlite_api.dart';
 
 class DatabaseHelper {
   static final _dbName = 'note_db';
-  static final _dbVersion = 3;
+  static final _dbVersion = 6;
   static Database? _database;
 
   // final DatabaseHelper helper = DatabaseHelper();
-
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDB();
@@ -27,27 +26,26 @@ class DatabaseHelper {
         onUpgrade: (db, ov, nv) => upgradeDB(db,ov,nv),
         onCreate: (Database db, int version) async {
           await db.execute(
-              '''create table notes(id integer primary key autoincrement,title text,content text,date text, time text,imp integer )''');
+              '''create table notes(id integer primary key autoincrement,title text,content text,date text, time text,imp integer)''');
         },
         version: _dbVersion
     );
   }
   Future<void> upgradeDB(Database db,int ov,int nv) async {
-    if (ov < nv) {
-      return await db.execute('alter table notes add column imp integer default 0');
+    if (ov < nv){
+      return await db.execute('alter table notes drop column color');
     }
+  }
+  //for retrieve all notes
+  Future<List<Note>> getNotes() async {
+    Database db = await database;
+    List<Map<String, dynamic>> notes = await db.query('notes');
+    return List.generate(notes.length, (i) => Note.fromJson(notes[i]),);
   }
   // for inserting a note
   Future<int> insertNote(Note note) async {
     Database db = await database;
     return await db.insert('notes', note.toJson());
-  }
-
-  //for retrieve all notes
-  Future<List<Note>> getNotes() async {
-    Database db = await database;
-    List<Map<String, dynamic>> notes = await db.query('notes');
-    return List.generate(notes.length, (i) => Note.fromJson(notes[i]));
   }
 
   Future<int> updateNote(Note note) async {

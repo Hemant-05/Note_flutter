@@ -4,13 +4,16 @@ A new Flutter project.
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+This is simple note Application build with flutter framework.
+In this we can write down our notes and tasks
 
-A few resources to get you started if this is your first Flutter project:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Future Implementation
+ * Manage state using provider
+ * Drawer ui changes 
+ * Firebase implementation
+ * Log In & Sign Up authentication
+ * Online sync Notes
+ * add tasks tab 
+ * add reminder tab
+and many more thing etc.
