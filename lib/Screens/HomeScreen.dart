@@ -125,7 +125,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        // backgroundColor: bgColor,
         body: ListViewBuilder(context, value),
         floatingActionButton: FloatingActionButton(
           backgroundColor: Colors.grey,
@@ -181,12 +180,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget ListViewBuilder(BuildContext context, NoteProvider value) {
-    return value.noteList.isEmpty
-        ? const Center(child: CircularProgressIndicator())
+    List<Note> itemList = isSearch? searchList: value.noteList;
+    String textWhenNoNote = isSearch? 'Search Note here' : 'Note note here \n Add new note';
+    return itemList.isEmpty
+        ? Center(child: cusText(textWhenNoNote, 30, true))
         : ListView.builder(
-            itemCount: isSearch? searchList.length :value.noteList.length,
+            itemCount: itemList.length,
             itemBuilder: (context, index) {
-              Note note = isSearch? searchList[index] : value.noteList[index];
+              Note note = itemList[index];
               return Container(
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.primary,
