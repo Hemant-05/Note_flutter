@@ -1,7 +1,14 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:note/Provider/NoteProvider.dart';
+import 'package:note/Resources/NoteModel.dart';
 import 'package:note/Screens/HomeScreen.dart';
+import 'package:note/Screens/LogInScreen.dart';
+import 'package:note/Screens/NoteDetailsScreen.dart';
+import 'package:note/Screens/ProfileScreen.dart';
+import 'package:note/Screens/SettingsScreen.dart';
+import 'package:note/Screens/SignUpScreen.dart';
 import 'package:note/firebase_options.dart';
 import 'package:provider/provider.dart';
 
@@ -20,6 +27,13 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 class _MyAppState extends State<MyApp> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  bool isLoggedIn = true;
+  @override
+  void initState() {
+    super.initState();
+    isLoggedIn = _auth.currentUser != null;
+  }
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
@@ -46,7 +60,15 @@ class _MyAppState extends State<MyApp> {
           ),
         ),
         debugShowCheckedModeBanner: false,
-        home: HomeScreen(),
+        initialRoute: isLoggedIn? 'home' : 'login',
+        routes: {
+          'home' : (context) => const HomeScreen(),
+          'profile' : (context) => const ProfileScreen(),
+          'setting' : (context) => const SettingsScreen(),
+          'signup' : (context) => const SignUpScreen(),
+          'login' : (context) => const LogInScreen(),
+          'details' : (context) => NoteDetailsScreen(note: ModalRoute.of(context)?.settings.arguments as Note),
+        },
       ),
     );
   }

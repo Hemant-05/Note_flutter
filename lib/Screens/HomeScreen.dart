@@ -1,13 +1,17 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:note/Custom/custom_item.dart';
+import 'package:note/Custom/cusDeleteDialog.dart';
+import 'package:note/Custom/cusHeightGap.dart';
+import 'package:note/Custom/cusSnackBar.dart';
+import 'package:note/Custom/cusText.dart';
+import 'package:note/Custom/cusTextField.dart';
 import 'package:note/Database/DatabaseHelper.dart';
+import 'package:note/FirebaseAuth/FirebaseAuth.dart';
 import 'package:note/Provider/NoteProvider.dart';
 import 'package:note/Resources/NoteModel.dart';
 import 'package:note/Resources/Utils.dart';
-import 'package:note/Screens/NoteDetailsScreen.dart';
-import 'package:note/Screens/SettingsScreen.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -19,6 +23,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  FirebaseAuthServices services = FirebaseAuthServices();
   bool isSearch = false;
   final dbHelper = DatabaseHelper();
   List<Note> list = [];
@@ -27,6 +32,75 @@ class _HomeScreenState extends State<HomeScreen> {
   TextEditingController searchCon = TextEditingController();
   int imp = 0;
   int selectedIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    return Consumer<NoteProvider>(
+      builder: (context, value, child) => Scaffold(
+        appBar: AppBar(
+          title: cusText('My Notes', 22, true),
+          actions: [
+            search(size),
+            const SizedBox(
+              width: 20,
+            ),
+          ],
+        ),
+        body: ListViewBuilder(context, value),
+        floatingActionButton: FloatingActionButton(
+          backgroundColor: Colors.grey,
+          onPressed: () {
+            showCusAddNoteDialog(context, value);
+          },
+          tooltip: 'Add new note',
+          child: const Icon(Icons.add),
+        ),
+        drawer: Drawer(
+          width: 250,
+          child: Column(
+            children: [
+              DrawerHeader(
+                child: Center(
+                  child: cusText(
+                    'My Notes',
+                    40,
+                    true,
+                  ),
+                ),
+              ),
+              ListTile(
+                onTap: () => Navigator.pushNamed(context, 'profile'),
+                title: cusText('My Profile', 20, true),
+                trailing: const Icon(Icons.person),
+              ),
+              ListTile(
+                onTap: () => Navigator.pushNamed(context, 'setting'),
+                title: cusText('Settings', 20, true),
+                trailing: const Icon(
+                  Icons.settings,
+                  size: 28,
+                ),
+              ),
+              ListTile(
+                onTap: onUrlCall,
+                title: cusText('Source Code', 20, true),
+                trailing: const Icon(Icons.code),
+              ),
+              ListTile(
+                onTap: () {
+                  services.logOut();
+                  Navigator.pushReplacementNamed(context, 'login');
+                },
+                title: cusText('Log Out', 20, true),
+                trailing: const Icon(Icons.logout),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -47,7 +121,6 @@ class _HomeScreenState extends State<HomeScreen> {
             note.title.toLowerCase().contains(
                   search.toLowerCase(),
                 )) {
-          print('Note item details : ${note.content}');
           searchList.add(note);
         }
       }
@@ -104,84 +177,24 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       },
       constraints: BoxConstraints(
-        maxWidth: isSearch? size.width * .8 : 40,
+        maxWidth: isSearch ? size.width * .8 : 40,
         minHeight: 40,
         maxHeight: 40,
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    return Consumer<NoteProvider>(
-      builder: (context, value, child) => Scaffold(
-        appBar: AppBar(
-          title: cusText('My Notes', 22, true),
-          actions: [
-            search(size),
-            const SizedBox(
-              width: 20,
-            ),
-          ],
-        ),
-        body: ListViewBuilder(context, value),
-        floatingActionButton: FloatingActionButton(
-          backgroundColor: Colors.grey,
-          onPressed: () {
-            showCusAddNoteDialog(context, value);
-          },
-          child: Icon(Icons.add),
-          tooltip: 'Add new note',
-        ),
-        drawer: Drawer(
-          width: 250,
-          child: Column(
-            children: [
-              DrawerHeader(
-                child: Center(
-                  child: cusText(
-                    'My Notes',
-                    40,
-                    true,
-                  ),
-                ),
-              ),
-              ListTile(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => SettingsScreen(),
-                  ),
-                ),
-                title: cusText('Settings', 24, true),
-                trailing: const Icon(
-                  Icons.settings,
-                  size: 28,
-                ),
-              ),
-              ListTile(
-                onTap: () async {
-                  final Uri url = Uri.parse(git_url);
-                  if(!await launchUrl(url,mode: LaunchMode.externalApplication)){
-                    showCusSnackBar(context, 'Error while opening web');
-                  }
-                },
-                title: cusText('Source Code', 24, true),
-                trailing: const Icon(
-                  Icons.code
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  void onUrlCall() async {
+    final Uri url = Uri.parse(git_url);
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      showCusSnackBar(context, 'Error while opening web');
+    }
   }
 
   Widget ListViewBuilder(BuildContext context, NoteProvider value) {
-    List<Note> itemList = isSearch? searchList: value.noteList;
-    String textWhenNoNote = isSearch? 'Search Note here' : 'Note note here \n Add new note';
+    List<Note> itemList = isSearch ? searchList : value.noteList;
+    String textWhenNoNote =
+        isSearch ? 'Search Note here' : 'Note note here \n Add new note';
     return itemList.isEmpty
         ? Center(child: cusText(textWhenNoNote, 30, true))
         : ListView.builder(
@@ -196,14 +209,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                 child: ListTile(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => NoteDetailsScreen(note: note),
-                      ),
-                    );
+                    Navigator.pushNamed(context, 'details', arguments: note);
                   },
-                  onLongPress: (){
+                  onLongPress: () {
                     showCusDeleteDialog(context, note, false, value);
                   },
                   title: cusText('${note.title}', 18, true),
@@ -224,7 +232,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       ),
-                      cusText('${note.time}', 12, true),
+                      cusText(
+                        '${note.time}',
+                        12,
+                        true,
+                      ),
                     ],
                   ),
                 ),
@@ -265,7 +277,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         const Text(
-                          'Important ? ',
+                          'Important ?',
                           style: TextStyle(
                             fontSize: 20,
                           ),
@@ -274,9 +286,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           trackColor: MaterialStatePropertyAll(imp == 1
                               ? Colors.red
                               : MediaQuery.of(context).platformBrightness ==
-                              Brightness.dark
-                              ? Colors.black
-                              : Colors.white),
+                                      Brightness.dark
+                                  ? Colors.black
+                                  : Colors.white),
                           trackOutlineWidth: MaterialStatePropertyAll(2),
                           value: imp == 1,
                           onChanged: (value) {
@@ -284,7 +296,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               imp = value ? 1 : 0;
                             });
                           },
-                        )
+                        ),
                       ],
                     ),
                     ElevatedButton(
@@ -296,10 +308,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Text(
                         'Save',
                         style: TextStyle(
-                            color: MediaQuery.of(context).platformBrightness ==
-                                    Brightness.dark
-                                ? Colors.white
-                                : Colors.black,
+                          color: MediaQuery.of(context).platformBrightness ==
+                                  Brightness.dark
+                              ? Colors.white
+                              : Colors.black,
                         ),
                       ),
                     )

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:note/Custom/custom_item.dart';
+import 'package:note/Custom/cusText.dart';
 import 'package:note/Provider/NoteProvider.dart';
 import 'package:note/Resources/NoteModel.dart';
 import 'package:provider/provider.dart';
+import '../Custom/cusDeleteDialog.dart';
+import '../Custom/cusSnackBar.dart';
 
 class NoteDetailsScreen extends StatefulWidget {
   const NoteDetailsScreen({required this.note, super.key});
@@ -20,53 +22,7 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
   int imp = 0;
 
   @override
-  void initState() {
-    super.initState();
-    contentCon.text = widget.note.content;
-    titleController.text = widget.note.title;
-    imp = widget.note.imp;
-  }
-
-  void updateNote(NoteProvider value) async {
-    Note old = widget.note;
-    String title = titleController.text.toString().trim();
-    String content = contentCon.text.toString().trim();
-    content += ' ';
-    DateTime now = DateTime.now();
-    String time = DateFormat.jm().format(now);
-    String date = DateFormat('dd-MM-yyyy').format(now);
-    Note note = Note(
-      id: old.id,
-      title: title,
-      content: content,
-      date: date,
-      time: time,
-      imp: imp,
-    );
-    int c = await value.updateNote(note);
-    Navigator.pop(context);
-    if (c != 0) {
-      showCusSnackBar(context, 'Updated Successfully');
-    } else {
-      showCusSnackBar(context, 'Some Error!');
-    }
-  }
-
-  Widget delete(NoteProvider value) {
-    return IconButton(
-      onPressed: () {
-        showCusDeleteDialog(context, widget.note, true, value);
-      },
-      icon: const Icon(
-        Icons.delete_forever_outlined,
-        size: 30,
-      ),
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
-    Size size = MediaQuery.of(context).size;
     return Consumer<NoteProvider>(
       builder: (context, value, child) => Scaffold(
         appBar: AppBar(
@@ -75,7 +31,7 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
             controller: titleController,
             autofocus: true,
             decoration: const InputDecoration(border: InputBorder.none),
-            style: TextStyle(fontSize: 30,fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
             maxLines: 1,
           ),
           actions: [delete(value)],
@@ -89,10 +45,8 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
-                      child: cusText(
-                          ' ${widget.note.time}\n ${widget.note.date}',
-                          14,
-                          true),
+                    child: cusText(
+                        ' ${widget.note.time}\n ${widget.note.date}', 14, true),
                   ),
                   Container(
                     width: 80,
@@ -142,10 +96,55 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
           onPressed: () async {
             updateNote(value);
           },
-          child: Icon(
+          child: const Icon(
             Icons.save_as_sharp,
           ),
         ),
+      ),
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    contentCon.text = widget.note.content;
+    titleController.text = widget.note.title;
+    imp = widget.note.imp;
+  }
+
+  void updateNote(NoteProvider value) async {
+    Note old = widget.note;
+    String title = titleController.text.toString().trim();
+    String content = contentCon.text.toString().trim();
+    content += ' ';
+    DateTime now = DateTime.now();
+    String time = DateFormat.jm().format(now);
+    String date = DateFormat('dd-MM-yyyy').format(now);
+    Note note = Note(
+      id: old.id,
+      title: title,
+      content: content,
+      date: date,
+      time: time,
+      imp: imp,
+    );
+    int c = await value.updateNote(note);
+    Navigator.pop(context);
+    if (c != 0) {
+      showCusSnackBar(context, 'Updated Successfully');
+    } else {
+      showCusSnackBar(context, 'Some Error!');
+    }
+  }
+
+  Widget delete(NoteProvider value) {
+    return IconButton(
+      onPressed: () {
+        showCusDeleteDialog(context, widget.note, true, value);
+      },
+      icon: const Icon(
+        Icons.delete_forever_outlined,
+        size: 30,
       ),
     );
   }
