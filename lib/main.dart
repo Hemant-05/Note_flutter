@@ -63,7 +63,7 @@ class _MyAppState extends State<MyApp> {
         initialRoute: isLoggedIn? 'home' : 'login',
         routes: {
           'home' : (context) => const HomeScreen(),
-          'profile' : (context) => const ProfileScreen(),
+          'profile' : (context) => ProfileScreen(),
           'setting' : (context) => const SettingsScreen(),
           'signup' : (context) => const SignUpScreen(),
           'login' : (context) => const LogInScreen(),

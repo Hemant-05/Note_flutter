@@ -1,12 +1,9 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:note/Custom/cusAddNoteDialog.dart';
 import 'package:note/Custom/cusDeleteDialog.dart';
-import 'package:note/Custom/cusHeightGap.dart';
 import 'package:note/Custom/cusSnackBar.dart';
 import 'package:note/Custom/cusText.dart';
-import 'package:note/Custom/cusTextField.dart';
 import 'package:note/Database/DatabaseHelper.dart';
 import 'package:note/FirebaseAuth/FirebaseAuth.dart';
 import 'package:note/Provider/NoteProvider.dart';
@@ -51,53 +48,12 @@ class _HomeScreenState extends State<HomeScreen> {
         floatingActionButton: FloatingActionButton(
           backgroundColor: Colors.grey,
           onPressed: () {
-            showCusAddNoteDialog(context, value);
+            AddNote().showCusAddNoteDialog(context, value);
           },
           tooltip: 'Add new note',
           child: const Icon(Icons.add),
         ),
-        drawer: Drawer(
-          width: 250,
-          child: Column(
-            children: [
-              DrawerHeader(
-                child: Center(
-                  child: cusText(
-                    'My Notes',
-                    40,
-                    true,
-                  ),
-                ),
-              ),
-              ListTile(
-                onTap: () => Navigator.pushNamed(context, 'profile'),
-                title: cusText('My Profile', 20, true),
-                trailing: const Icon(Icons.person),
-              ),
-              ListTile(
-                onTap: () => Navigator.pushNamed(context, 'setting'),
-                title: cusText('Settings', 20, true),
-                trailing: const Icon(
-                  Icons.settings,
-                  size: 28,
-                ),
-              ),
-              ListTile(
-                onTap: onUrlCall,
-                title: cusText('Source Code', 20, true),
-                trailing: const Icon(Icons.code),
-              ),
-              ListTile(
-                onTap: () {
-                  services.logOut();
-                  Navigator.pushReplacementNamed(context, 'login');
-                },
-                title: cusText('Log Out', 20, true),
-                trailing: const Icon(Icons.logout),
-              )
-            ],
-          ),
-        ),
+        drawer: AppDrawer(),
       ),
     );
   }
@@ -126,27 +82,13 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     });
   }
-
-  void addNote(String title, String content, NoteProvider value) async {
-    DateTime now = DateTime.now();
-    String time = DateFormat.jm().format(now);
-    String date = DateFormat('dd-MM-yyyy').format(now);
-    if (!title.isEmpty) {
-      Note note = Note(
-        title: '$title',
-        content: '$content',
-        date: '$date',
-        time: '$time',
-        imp: imp,
-      );
-      await value.insertNote(note);
-      imp = 0;
-      Navigator.pop(context);
-    } else {
-      showCusSnackBar(context, 'Write something');
-      Navigator.pop(context);
+  void onUrlCall() async {
+    final Uri url = Uri.parse(git_url);
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      showCusSnackBar(context, 'Error while opening web');
     }
   }
+
 
   Widget search(Size size) {
     return SearchBar(
@@ -184,14 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void onUrlCall() async {
-    final Uri url = Uri.parse(git_url);
-    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-      showCusSnackBar(context, 'Error while opening web');
-    }
-  }
-
-  Widget ListViewBuilder(BuildContext context, NoteProvider value) {
+  Widget ListViewBuilder(BuildContext context, NoteProvider value ) {
     List<Note> itemList = isSearch ? searchList : value.noteList;
     String textWhenNoNote =
         isSearch ? 'Search Note here' : 'Note note here \n Add new note';
@@ -206,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Theme.of(context).colorScheme.primary,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                 child: ListTile(
                   onTap: () {
                     Navigator.pushNamed(context, 'details', arguments: note);
@@ -244,84 +179,48 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           );
   }
-
-  showCusAddNoteDialog(BuildContext context, NoteProvider value) {
-    Size size = MediaQuery.of(context).size;
-    TextEditingController titleCon = TextEditingController();
-    TextEditingController contentCon = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) => BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-            child: Dialog(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              child: Container(
-                constraints: const BoxConstraints(maxHeight: 300),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
-                child: Column(
-                  children: [
-                    Container(
-                      constraints: const BoxConstraints(maxHeight: 70),
-                      child:
-                          cusTextField('Enter Title', titleCon, 1, size, true),
-                    ),
-                    hGap(14),
-                    Expanded(
-                      child: cusTextField('Write your note here....',
-                          contentCon, null, size, true),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        const Text(
-                          'Important ?',
-                          style: TextStyle(
-                            fontSize: 20,
-                          ),
-                        ),
-                        Switch(
-                          trackColor: MaterialStatePropertyAll(imp == 1
-                              ? Colors.red
-                              : MediaQuery.of(context).platformBrightness ==
-                                      Brightness.dark
-                                  ? Colors.black
-                                  : Colors.white),
-                          trackOutlineWidth: MaterialStatePropertyAll(2),
-                          value: imp == 1,
-                          onChanged: (value) {
-                            setState(() {
-                              imp = value ? 1 : 0;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        var title = titleCon.text.toString();
-                        var content = contentCon.text.toString();
-                        addNote(title, content, value);
-                      },
-                      child: Text(
-                        'Save',
-                        style: TextStyle(
-                          color: MediaQuery.of(context).platformBrightness ==
-                                  Brightness.dark
-                              ? Colors.white
-                              : Colors.black,
-                        ),
-                      ),
-                    )
-                  ],
-                ),
+  Widget AppDrawer(){
+    return Drawer(
+      width: 250,
+      child: Column(
+        children: [
+          DrawerHeader(
+            child: Center(
+              child: cusText(
+                'My Notes',
+                40,
+                true,
               ),
             ),
           ),
-        );
-      },
+          ListTile(
+            onTap: () => Navigator.pushNamed(context, 'profile'),
+            title: cusText('My Profile', 20, true),
+            trailing: const Icon(Icons.person),
+          ),
+          ListTile(
+            onTap: () => Navigator.pushNamed(context, 'setting'),
+            title: cusText('Settings', 20, true),
+            trailing: const Icon(
+              Icons.settings,
+              size: 28,
+            ),
+          ),
+          ListTile(
+            onTap: onUrlCall,
+            title: cusText('Source Code', 20, true),
+            trailing: const Icon(Icons.code),
+          ),
+          ListTile(
+            onTap: () {
+              services.logOut();
+              Navigator.pushReplacementNamed(context, 'login');
+            },
+            title: cusText('Log Out', 20, true),
+            trailing: const Icon(Icons.logout),
+          )
+        ],
+      ),
     );
   }
 }

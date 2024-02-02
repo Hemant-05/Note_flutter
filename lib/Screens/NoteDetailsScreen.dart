@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:note/Custom/cusSwipableButton.dart';
 import 'package:note/Custom/cusText.dart';
 import 'package:note/Provider/NoteProvider.dart';
 import 'package:note/Resources/NoteModel.dart';
 import 'package:provider/provider.dart';
+
 import '../Custom/cusDeleteDialog.dart';
 import '../Custom/cusSnackBar.dart';
 
@@ -88,17 +90,13 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
                 ),
               ),
             ),
+            cusSwipeableButton(
+              context,
+              () => updateNote(value),
+              'Slide to update note',
+              false
+            ),
           ],
-        ),
-        floatingActionButton: FloatingActionButton(
-          tooltip: 'Update',
-          backgroundColor: Colors.grey,
-          onPressed: () async {
-            updateNote(value);
-          },
-          child: const Icon(
-            Icons.save_as_sharp,
-          ),
         ),
       ),
     );
@@ -129,7 +127,7 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
       imp: imp,
     );
     int c = await value.updateNote(note);
-    Navigator.pop(context);
+    // Navigator.pop(context);
     if (c != 0) {
       showCusSnackBar(context, 'Updated Successfully');
     } else {
