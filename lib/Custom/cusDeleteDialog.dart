@@ -1,13 +1,15 @@
 import 'dart:ui';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:note/Custom/cusSnackBar.dart';
 import 'package:note/Provider/NoteProvider.dart';
 import 'package:note/Resources/NoteModel.dart';
-import 'package:note/Screens/HomeScreen.dart';
+import 'package:note/Resources/Utils.dart';
 import 'cusButtonStyle.dart';
 
 showCusDeleteDialog(
     BuildContext context,Note note, bool inDetail, NoteProvider value) {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   showDialog(
     context: context,
     builder: (context) {
@@ -46,6 +48,7 @@ showCusDeleteDialog(
               style: style(),
               onPressed: () async {
                 int c = await value.deleteNote(id!);
+                _firestore.collection('users').doc(user?.uid).collection('notes').doc('${note.title + note.time}').delete();
                 if (c != 0) {
                   showCusSnackBar(context, 'Deleted Successfully....');
                 } else {
@@ -54,11 +57,9 @@ showCusDeleteDialog(
                 if (!inDetail) {
                   Navigator.pop(context);
                 } else {
-                  Navigator.pushAndRemoveUntil(
+                  Navigator.pushNamedAndRemoveUntil(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => HomeScreen(),
-                      ),
+                      'drawer',
                           (route) => false);
                 }
               },

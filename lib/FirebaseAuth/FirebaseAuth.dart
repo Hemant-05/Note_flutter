@@ -1,17 +1,23 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:note/Resources/UserModel.dart';
 
 class FirebaseAuthServices {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  late User? user = _auth.currentUser;
 
   //add user details
   Future addUserDetails(String name, String email, String photoUrl) async {
-    await _firestore.collection('users').add({
-      'name': name,
-      'email': email,
-      'photourl': photoUrl,
-    });
+    final uid = _auth.currentUser?.uid;
+    if(user != null) {
+      await _firestore.collection('users').doc(uid).set({
+        'name': name,
+        'email': email,
+        'photoUrl': photoUrl,
+        'uid': uid,
+      });
+    }
   }
 
   // Log Out

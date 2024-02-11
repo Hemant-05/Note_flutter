@@ -2,7 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:note/Provider/NoteProvider.dart';
+import 'package:note/Provider/UserProvider.dart';
 import 'package:note/Resources/NoteModel.dart';
+import 'package:note/Screens/HiddenDrawerScreen.dart';
 import 'package:note/Screens/HomeScreen.dart';
 import 'package:note/Screens/LogInScreen.dart';
 import 'package:note/Screens/NoteDetailsScreen.dart';
@@ -40,6 +42,7 @@ class _MyAppState extends State<MyApp> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => NoteProvider(),),
+        ChangeNotifierProvider(create: (context) => UserDetailsProvider(),),
       ],
       child: MaterialApp(
         title: 'Note',
@@ -60,11 +63,12 @@ class _MyAppState extends State<MyApp> {
           ),
         ),
         debugShowCheckedModeBanner: false,
-        initialRoute: isLoggedIn? 'home' : 'login',
+        initialRoute: isLoggedIn? 'drawer' : 'login',
         routes: {
-          'home' : (context) => const HomeScreen(),
-          'profile' : (context) => ProfileScreen(),
-          'setting' : (context) => const SettingsScreen(),
+          'drawer' : (context) => HiddenDrawerScreen(),
+          'home' : (context) => HomeScreen(openDrawer: (){},),
+          'profile' : (context) => ProfileScreen(openDrawer: (){},),
+          'setting' : (context) => SettingsScreen(openDrawer:() {},),
           'signup' : (context) => const SignUpScreen(),
           'login' : (context) => const LogInScreen(),
           'details' : (context) => NoteDetailsScreen(note: ModalRoute.of(context)?.settings.arguments as Note),

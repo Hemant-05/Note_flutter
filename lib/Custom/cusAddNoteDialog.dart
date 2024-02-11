@@ -1,4 +1,6 @@
 import 'dart:ui';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:note/Custom/cusHeightGap.dart';
@@ -6,12 +8,16 @@ import 'package:note/Custom/cusSwipableButton.dart';
 import 'package:note/Custom/cusTextField.dart';
 import 'package:note/Provider/NoteProvider.dart';
 import 'package:note/Resources/NoteModel.dart';
+import 'package:note/Resources/Utils.dart';
+
 import 'cusSnackBar.dart';
 
 class AddNote {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   int imp = 0;
   TextEditingController titleCon = TextEditingController();
   TextEditingController contentCon = TextEditingController();
+
   showCusAddNoteDialog(BuildContext context, NoteProvider value) {
     Size size = MediaQuery.of(context).size;
     showDialog(
@@ -74,12 +80,8 @@ class AddNote {
                         ),
                       ],
                     ),
-                    cusSwipeableButton(
-                      context,
-                      () => addNote(context, value),
-                      'Slide to Save',
-                      true
-                    ),
+                    cusSwipeableButton(context, () => addNote(context, value),
+                        'Slide to Save', true),
                   ],
                 ),
               ),
@@ -105,6 +107,12 @@ class AddNote {
         imp: imp,
       );
       await value.insertNote(note);
+      _firestore
+          .collection('users')
+          .doc(user?.uid)
+          .collection('notes')
+          .doc('${note.title + note.time}')
+          .set(note.toJson());
       imp = 0;
       Navigator.pop(context);
     } else {

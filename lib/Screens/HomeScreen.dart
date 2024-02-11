@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:note/Custom/cusAddNoteDialog.dart';
 import 'package:note/Custom/cusDeleteDialog.dart';
 import 'package:note/Custom/cusSnackBar.dart';
@@ -13,7 +12,9 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, required this.openDrawer});
+
+  final VoidCallback openDrawer;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -36,6 +37,8 @@ class _HomeScreenState extends State<HomeScreen> {
     return Consumer<NoteProvider>(
       builder: (context, value, child) => Scaffold(
         appBar: AppBar(
+          leading: IconButton(
+              icon: Icon(Icons.menu), onPressed: () => widget.openDrawer(),),
           title: cusText('My Notes', 22, true),
           actions: [
             search(size),
@@ -53,7 +56,6 @@ class _HomeScreenState extends State<HomeScreen> {
           tooltip: 'Add new note',
           child: const Icon(Icons.add),
         ),
-        drawer: AppDrawer(),
       ),
     );
   }
@@ -82,13 +84,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     });
   }
-  void onUrlCall() async {
-    final Uri url = Uri.parse(git_url);
-    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-      showCusSnackBar(context, 'Error while opening web');
-    }
-  }
-
 
   Widget search(Size size) {
     return SearchBar(
@@ -126,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget ListViewBuilder(BuildContext context, NoteProvider value ) {
+  Widget ListViewBuilder(BuildContext context, NoteProvider value) {
     List<Note> itemList = isSearch ? searchList : value.noteList;
     String textWhenNoNote =
         isSearch ? 'Search Note here' : 'Note note here \n Add new note';
@@ -178,49 +173,5 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
           );
-  }
-  Widget AppDrawer(){
-    return Drawer(
-      width: 250,
-      child: Column(
-        children: [
-          DrawerHeader(
-            child: Center(
-              child: cusText(
-                'My Notes',
-                40,
-                true,
-              ),
-            ),
-          ),
-          ListTile(
-            onTap: () => Navigator.pushNamed(context, 'profile'),
-            title: cusText('My Profile', 20, true),
-            trailing: const Icon(Icons.person),
-          ),
-          ListTile(
-            onTap: () => Navigator.pushNamed(context, 'setting'),
-            title: cusText('Settings', 20, true),
-            trailing: const Icon(
-              Icons.settings,
-              size: 28,
-            ),
-          ),
-          ListTile(
-            onTap: onUrlCall,
-            title: cusText('Source Code', 20, true),
-            trailing: const Icon(Icons.code),
-          ),
-          ListTile(
-            onTap: () {
-              services.logOut();
-              Navigator.pushReplacementNamed(context, 'login');
-            },
-            title: cusText('Log Out', 20, true),
-            trailing: const Icon(Icons.logout),
-          )
-        ],
-      ),
-    );
   }
 }

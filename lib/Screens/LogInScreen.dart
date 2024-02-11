@@ -112,11 +112,9 @@ class _LogInScreenState extends State<LogInScreen> {
     if (user != null) {
       print("Users Logged In Successfully..."
           "\n Name is : $email");
-      Navigator.pushReplacement(
+      Navigator.pushReplacementNamed(
         context,
-        MaterialPageRoute(
-          builder: (context) => HomeScreen(),
-        ),
+       'drawer'
       );
     } else {
       print("Some problem Accoured while User sign in ");

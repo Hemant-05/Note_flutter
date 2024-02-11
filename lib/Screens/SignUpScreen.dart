@@ -5,8 +5,6 @@ import 'package:note/Custom/cusSnackBar.dart';
 import 'package:note/Custom/cusText.dart';
 import 'package:note/Custom/cusTextField.dart';
 import 'package:note/FirebaseAuth/FirebaseAuth.dart';
-import 'package:note/Screens/HomeScreen.dart';
-
 import '../Custom/cusElevetedButton.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -54,18 +52,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 onTap: () => Navigator.pushReplacementNamed(context, 'login'),
                 child: RichText(
                   text: TextSpan(
-                      style: TextStyle(
-                          fontSize: 16,
-                          color: MediaQuery.of(context).platformBrightness ==
-                                  Brightness.dark
-                              ? Colors.white
-                              : Colors.black),
-                      children: const [
-                        TextSpan(text: 'Already have an account'),
-                        TextSpan(
-                            text: ' \"Log in here \" ',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                      ]),
+                    style: TextStyle(
+                        fontSize: 16,
+                        color: MediaQuery.of(context).platformBrightness ==
+                                Brightness.dark
+                            ? Colors.white
+                            : Colors.black),
+                    children: const [
+                      TextSpan(text: 'Already have an account'),
+                      TextSpan(
+                          text: ' \"Log in here \" ',
+                          style: TextStyle(fontWeight: FontWeight.bold,),),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -98,14 +97,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
         print("Users Account Created Successfully..."
             "\n Name is : $name");
         await services.addUserDetails(name, email, '');
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => HomeScreen(),
-          ),
-        );
+        Navigator.pushReplacementNamed(context, 'drawer');
       } else {
         print("Some problem Accoured while creating account");
+        setState(() {
+          isLoading = false;
+        });
       }
     } else {
       showCusSnackBar(context, 'Check Pass');

@@ -12,14 +12,14 @@ Widget cusSwipeableButton(BuildContext context,fun(),String btnText,bool isDialo
           onFinish: () async {
             if(!isDialog) {
               Navigator.pushNamedAndRemoveUntil(
-                context, 'home', (route) => false,);
+                context, 'drawer', (route) => false,);
             }
             setState((){
               isFinished = false;
             });
           },
           onWaitingProcess: () {
-            Future.delayed(Duration(milliseconds: 200),(){
+            Future.delayed(Duration(milliseconds: 500),(){
               setState((){
                 fun();
                 isFinished = true;

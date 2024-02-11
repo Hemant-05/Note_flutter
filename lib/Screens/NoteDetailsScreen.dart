@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:note/Custom/cusSwipableButton.dart';
+import 'package:note/Custom/cusSnackBar.dart';
 import 'package:note/Custom/cusText.dart';
 import 'package:note/Provider/NoteProvider.dart';
 import 'package:note/Resources/NoteModel.dart';
 import 'package:provider/provider.dart';
-
 import '../Custom/cusDeleteDialog.dart';
-import '../Custom/cusSnackBar.dart';
 
 class NoteDetailsScreen extends StatefulWidget {
   const NoteDetailsScreen({required this.note, super.key});
@@ -25,78 +23,82 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<NoteProvider>(
-      builder: (context, value, child) => Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          title: TextField(
-            controller: titleController,
-            autofocus: true,
-            decoration: const InputDecoration(border: InputBorder.none),
-            style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-            maxLines: 1,
-          ),
-          actions: [delete(value)],
-        ),
-        body: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-              color: Colors.grey,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    child: cusText(
-                        ' ${widget.note.time}\n ${widget.note.date}', 14, true),
-                  ),
-                  Container(
-                    width: 80,
-                  ),
-                  const Text(
-                    'Important ? ',
-                    style: TextStyle(
-                      fontSize: 20,
-                    ),
-                  ),
-                  Switch(
-                    trackColor: MaterialStatePropertyAll(imp == 1
-                        ? Colors.red
-                        : MediaQuery.of(context).platformBrightness ==
-                                Brightness.dark
-                            ? Colors.black
-                            : Colors.white),
-                    trackOutlineWidth: MaterialStatePropertyAll(2),
-                    value: imp == 1,
-                    onChanged: (value) {
-                      setState(() {
-                        imp = value ? 1 : 0;
-                      });
-                    },
-                  )
-                ],
-              ),
+    return  Consumer<NoteProvider>(
+        builder: (context, value, child) => Scaffold(
+          appBar: AppBar(
+            title: TextField(
+              controller: titleController,
+              autofocus: true,
+              decoration: const InputDecoration(border: InputBorder.none),
+              style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+              maxLines: 1,
             ),
-            Expanded(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 2, horizontal: 12),
-                child: TextField(
-                  controller: contentCon,
-                  autofocus: true,
-                  decoration: const InputDecoration(border: InputBorder.none),
-                  style: TextStyle(fontSize: 20),
-                  maxLines: 1000,
+            actions: [delete(value)],
+          ),
+          body: PopScope(
+            canPop: true,
+            onPopInvoked: (s) {
+              updateNote(value);
+            },
+            child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary,
+                  borderRadius: BorderRadius.circular(12)
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      child: cusText(
+                          ' ${widget.note.time}\n ${widget.note.date}', 14, true,
+                      ),
+                    ),
+                    Container(
+                      width: 80,
+                    ),
+                    const Text(
+                      'Important ? ',
+                      style: TextStyle(
+                        fontSize: 20,
+                      ),
+                    ),
+                    Switch(
+                      trackColor: MaterialStatePropertyAll(imp == 1
+                          ? Colors.red
+                          : MediaQuery.of(context).platformBrightness ==
+                                  Brightness.dark
+                              ? Colors.black
+                              : Colors.white),
+                      trackOutlineWidth: const MaterialStatePropertyAll(2),
+                      value: imp == 1,
+                      onChanged: (value) {
+                        setState(() {
+                          imp = value ? 1 : 0;
+                        });
+                      },
+                    )
+                  ],
                 ),
               ),
-            ),
-            cusSwipeableButton(
-              context,
-              () => updateNote(value),
-              'Slide to update note',
-              false
-            ),
-          ],
+              Expanded(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 2, horizontal: 12),
+                  child: TextField(
+                    controller: contentCon,
+                    autofocus: true,
+                    decoration: const InputDecoration(border: InputBorder.none),
+                    style: const TextStyle(fontSize: 20),
+                    maxLines: 1000,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -114,24 +116,20 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
     Note old = widget.note;
     String title = titleController.text.toString().trim();
     String content = contentCon.text.toString().trim();
-    content += ' ';
-    DateTime now = DateTime.now();
-    String time = DateFormat.jm().format(now);
-    String date = DateFormat('dd-MM-yyyy').format(now);
-    Note note = Note(
-      id: old.id,
-      title: title,
-      content: content,
-      date: date,
-      time: time,
-      imp: imp,
-    );
-    int c = await value.updateNote(note);
-    // Navigator.pop(context);
-    if (c != 0) {
-      showCusSnackBar(context, 'Updated Successfully');
-    } else {
-      showCusSnackBar(context, 'Some Error!');
+    bool isUpdate = title == (old.title) && content == (old.content) && imp == old.imp;
+    if(!isUpdate){
+      DateTime now = DateTime.now();
+      String time = DateFormat.jm().format(now);
+      String date = DateFormat('dd-MM-yyyy').format(now);
+      Note note = Note(
+        id: old.id,
+        title: title,
+        content: content,
+        date: date,
+        time: time,
+        imp: imp,
+      );
+      await value.updateNote(note);
     }
   }
 
